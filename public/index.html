@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>fabric test</title>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js" integrity="sha512-CeIsOAsgJnmevfCi2C7Zsyy6bQKi43utIjdA87Q0ZY84oDqnI0uwfM9+bKiIkI75lUeI00WG/+uJzOmuHlesMA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    </head>
+    <body>
+        <canvas id="fabric-canvas"></canvas>
+        <div>
+            <button onclick="handleAddImg()">增加图片</button>
+        </div>
+        <script>
+            var canvas = new fabric.Canvas('fabric-canvas');
+            canvas?.setDimensions(
+                {
+                    width: `1000px`,
+                    height: `500px`,
+                },
+                {
+                    cssOnly: true,
+                }
+            );
+            canvas?.setDimensions(
+                {
+                    width: 2400,
+                    height: 1800
+                },
+                {
+                    backstoreOnly: true,
+                }
+            );
+            canvas.preserveObjectStacking = true;
+            canvas.on('mouse:down', function(opt) {
+                var evt = opt.e;
+                if (evt.altKey === true) {
+                    this.isDragging = true;
+                    this.selection = false;
+                    this.lastPosX = evt.clientX;
+                    this.lastPosY = evt.clientY;
+                }
+            });
+            canvas.on('mouse:move', function(opt) {
+                if (this.isDragging) {
+                    var e = opt.e;
+                    var vpt = this.viewportTransform;
+                    vpt[4] += e.clientX - this.lastPosX;
+                    vpt[5] += e.clientY - this.lastPosY;
+                    this.requestRenderAll();
+                    this.lastPosX = e.clientX;
+                    this.lastPosY = e.clientY;
+                }
+            });
+            canvas.on('mouse:up', function(opt) {
+                // on mouse up we want to recalculate new interaction
+                // for all objects, so we call setViewportTransform
+                this.setViewportTransform(this.viewportTransform);
+                this.isDragging = false;
+                this.selection = true;
+            });
+            // function throttle(func, wait = 300) {
+            //     let lastTime = Date.now();
+            //     const context = this;
+            //     return function (...res) {
+            //         if (Date.now() - lastTime >= wait) {
+            //             lastTime = Date.now();
+            //             func.apply(context, res);
+            //         }
+            //     };
+            // }
+            // const mouseWheelHandler = throttle()
+            let preTriggerTime = Date.now();
+            canvas.on('mouse:wheel', function(opt) {
+                console.log('mouse wheel');
+                opt.e.preventDefault();
+                opt.e.stopPropagation();
+                if (Date.now() - preTriggerTime > 200) {
+                    var delta = opt.e.deltaY;
+                    if (Math.abs(delta) * 10 < 150) {
+                        delta *= 10;
+                    }
+                    var zoom = canvas.getZoom();
+                    zoom *= 0.999 ** delta;
+                    if (zoom > 20) zoom = 20;
+                    if (zoom < 0.01) zoom = 0.01;
+                    const pointerX = opt.pointer.x || 0;
+                    const pointerY = opt.pointer.y || 0;
+                    canvas.zoomToPoint({ x: pointerX, y: pointerY }, zoom);
+                }
+            });
+
+            function handleAddImg() {
+                console.log('activated');
+                const img = fabric.Image.fromURL('/city_1.png', (img) => {
+                    console.log('new img: ', img);
+                    img.set({
+                        left: 0,
+                        top: 0
+                    });
+                    canvas.add(img);
+                });
+            }
+        </script>
+    </body>
+</html>
